@@ -1,64 +1,249 @@
-import Image from "next/image";
+"use client";
+
+import { useState } from "react";
+import { useRouter } from "next/navigation";
+import type { TimeRange } from "@/types";
+
+const TIME_RANGES: { value: TimeRange; label: string }[] = [
+  { value: "3months", label: "3 months" },
+  { value: "6months", label: "6 months" },
+  { value: "1year", label: "1 year" },
+  { value: "2years", label: "2 years" },
+];
+
+const PROGRESS_PHASES = [
+  "Fetching posts from social profiles...",
+  "Reading through the content...",
+  "Extracting actions and outcomes...",
+  "Identifying patterns and strategies...",
+  "Synthesizing the report...",
+];
 
 export default function Home() {
+  const router = useRouter();
+  const [linkedinUrl, setLinkedinUrl] = useState("");
+  const [twitterHandle, setTwitterHandle] = useState("");
+  const [timeRange, setTimeRange] = useState<TimeRange>("6months");
+  const [error, setError] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [progressPhase, setProgressPhase] = useState(0);
+
+  const hasInput = linkedinUrl.trim() || twitterHandle.trim();
+
+  async function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    if (!hasInput) {
+      setError("Enter at least one LinkedIn URL or Twitter handle.");
+      return;
+    }
+    setError(null);
+    setLoading(true);
+    setProgressPhase(0);
+
+    // Cycle through progress phases to give a sense of progress
+    const interval = setInterval(() => {
+      setProgressPhase((prev) =>
+        prev < PROGRESS_PHASES.length - 1 ? prev + 1 : prev
+      );
+    }, 8000);
+
+    try {
+      const res = await fetch("/api/analyze", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          linkedinUrl: linkedinUrl.trim() || undefined,
+          twitterHandle: twitterHandle.trim() || undefined,
+          timeRange,
+        }),
+      });
+
+      const data = await res.json();
+      clearInterval(interval);
+
+      if (!res.ok) {
+        setError(data.error || "Something went wrong.");
+        setLoading(false);
+        return;
+      }
+
+      router.push(`/report/${data.reportId}`);
+    } catch {
+      clearInterval(interval);
+      setError("Network error. Check your connection and try again.");
+      setLoading(false);
+    }
+  }
+
   return (
-    <div className="flex min-h-screen items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex min-h-screen w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the page.tsx file.
+    <div className="flex min-h-screen flex-col items-center justify-center px-4">
+      {/* Ambient glow behind the form */}
+      <div className="pointer-events-none absolute top-1/3 left-1/2 -translate-x-1/2 -translate-y-1/2 h-[480px] w-[480px] rounded-full bg-accent/[0.03] blur-[120px]" />
+
+      <main className="relative w-full max-w-md stagger">
+        {/* Logo / Title */}
+        <div className="mb-12 text-center">
+          <h1 className="font-mono text-2xl font-semibold tracking-tight text-foreground">
+            Keeping Tabs
           </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
+          <p className="mt-2 text-sm text-muted">
+            Distill competitor posts into actionable lessons
           </p>
         </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
+
+        {/* Form */}
+        <form onSubmit={handleSubmit} className="space-y-5">
+          {/* LinkedIn */}
+          <div>
+            <label
+              htmlFor="linkedin"
+              className="mb-1.5 block font-mono text-xs uppercase tracking-wider text-muted"
+            >
+              LinkedIn
+            </label>
+            <input
+              id="linkedin"
+              type="url"
+              value={linkedinUrl}
+              onChange={(e) => setLinkedinUrl(e.target.value)}
+              placeholder="https://linkedin.com/in/username"
+              disabled={loading}
+              className="w-full rounded-md border border-border bg-surface px-3.5 py-2.5 text-sm text-foreground placeholder:text-muted/60 transition-colors focus:border-accent/50 focus:bg-surface-2 disabled:opacity-50"
             />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
+          </div>
+
+          {/* Twitter */}
+          <div>
+            <label
+              htmlFor="twitter"
+              className="mb-1.5 block font-mono text-xs uppercase tracking-wider text-muted"
+            >
+              Twitter / X
+            </label>
+            <input
+              id="twitter"
+              type="text"
+              value={twitterHandle}
+              onChange={(e) => setTwitterHandle(e.target.value)}
+              placeholder="@handle"
+              disabled={loading}
+              className="w-full rounded-md border border-border bg-surface px-3.5 py-2.5 text-sm text-foreground placeholder:text-muted/60 transition-colors focus:border-accent/50 focus:bg-surface-2 disabled:opacity-50"
+            />
+          </div>
+
+          {/* Time range */}
+          <div>
+            <label
+              htmlFor="timeRange"
+              className="mb-1.5 block font-mono text-xs uppercase tracking-wider text-muted"
+            >
+              Time Range
+            </label>
+            <div className="relative">
+              <select
+                id="timeRange"
+                value={timeRange}
+                onChange={(e) => setTimeRange(e.target.value as TimeRange)}
+                disabled={loading}
+                className="w-full appearance-none rounded-md border border-border bg-surface px-3.5 py-2.5 pr-10 text-sm text-foreground transition-colors focus:border-accent/50 focus:bg-surface-2 disabled:opacity-50"
+              >
+                {TIME_RANGES.map((tr) => (
+                  <option key={tr.value} value={tr.value}>
+                    {tr.label}
+                  </option>
+                ))}
+              </select>
+              <div className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-muted">
+                <svg
+                  width="14"
+                  height="14"
+                  viewBox="0 0 16 16"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="1.5"
+                >
+                  <path d="M4 6l4 4 4-4" />
+                </svg>
+              </div>
+            </div>
+          </div>
+
+          {/* Error */}
+          {error && (
+            <div className="animate-fade-in rounded-md border border-red-900/40 bg-red-950/30 px-3.5 py-2.5 text-sm text-red-400">
+              {error}
+            </div>
+          )}
+
+          {/* Submit */}
+          <button
+            type="submit"
+            disabled={loading || !hasInput}
+            className="group w-full rounded-md bg-accent px-4 py-2.5 font-mono text-sm font-medium text-background transition-all hover:bg-accent-dim active:scale-[0.98] disabled:pointer-events-none disabled:opacity-40"
           >
-            Documentation
-          </a>
-        </div>
+            {loading ? "Analyzing..." : "Analyze"}
+          </button>
+        </form>
+
+        {/* Loading state */}
+        {loading && (
+          <div className="animate-fade-in mt-8 rounded-md border border-border bg-surface p-5">
+            <div className="mb-4 flex items-center gap-2.5">
+              {/* Spinner */}
+              <div className="relative h-4 w-4">
+                <div className="absolute inset-0 rounded-full border-2 border-border" />
+                <div className="absolute inset-0 animate-spin rounded-full border-2 border-transparent border-t-accent" />
+              </div>
+              <span className="font-mono text-xs uppercase tracking-wider text-muted">
+                Working
+              </span>
+            </div>
+
+            {/* Progress phases */}
+            <div className="space-y-2">
+              {PROGRESS_PHASES.map((phase, i) => (
+                <div
+                  key={i}
+                  className={`flex items-center gap-2.5 text-sm transition-all duration-500 ${
+                    i < progressPhase
+                      ? "text-muted"
+                      : i === progressPhase
+                        ? "text-foreground"
+                        : "text-muted/30"
+                  }`}
+                >
+                  {i < progressPhase ? (
+                    <svg
+                      width="12"
+                      height="12"
+                      viewBox="0 0 16 16"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      className="shrink-0 text-accent"
+                    >
+                      <path d="M3 8.5l3.5 3.5L13 5" />
+                    </svg>
+                  ) : i === progressPhase ? (
+                    <span className="inline-block h-1.5 w-1.5 shrink-0 rounded-full bg-accent animate-pulse-slow" />
+                  ) : (
+                    <span className="inline-block h-1.5 w-1.5 shrink-0 rounded-full bg-border" />
+                  )}
+                  <span>{phase}</span>
+                </div>
+              ))}
+            </div>
+
+            <p className="mt-4 text-xs text-muted">
+              This usually takes 30-60 seconds.
+            </p>
+          </div>
+        )}
+
+        {/* Footer note */}
+        <p className="mt-10 text-center text-xs text-muted/50">
+          At least one profile required. Both recommended for deeper analysis.
+        </p>
       </main>
     </div>
   );
