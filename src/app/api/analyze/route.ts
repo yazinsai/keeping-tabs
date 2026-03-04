@@ -5,10 +5,13 @@ import { fetchLinkedInPosts, linkedInPostsToUnified } from '@/lib/linkedin';
 import { fetchTwitterPosts, tweetsToUnified } from '@/lib/twitter';
 import { extractInsights, synthesizeReport } from '@/lib/llm';
 import { saveReport } from '@/lib/reports';
+import { validateAccessKey, unauthorizedResponse } from '@/lib/auth';
 
 export const maxDuration = 120; // Allow up to 2 minutes for analysis
 
 export async function POST(request: NextRequest) {
+  if (!validateAccessKey(request)) return unauthorizedResponse();
+
   try {
     const body: AnalyzeRequest = await request.json();
     const { linkedinUrl, twitterHandle, timeRange } = body;

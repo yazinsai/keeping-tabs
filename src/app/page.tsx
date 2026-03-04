@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import type { TimeRange } from "@/types";
+import { getAccessKey } from "@/components/AuthGate";
 
 const TIME_RANGES: { value: TimeRange; label: string }[] = [
   { value: "3months", label: "3 months" },
@@ -33,7 +34,9 @@ export default function Home() {
   >([]);
 
   useEffect(() => {
-    fetch("/api/reports")
+    fetch("/api/reports", {
+      headers: { "x-access-key": getAccessKey() || "" },
+    })
       .then((res) => res.json())
       .then(setPastReports)
       .catch(() => {});
@@ -61,7 +64,10 @@ export default function Home() {
     try {
       const res = await fetch("/api/analyze", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          "x-access-key": getAccessKey() || "",
+        },
         body: JSON.stringify({
           linkedinUrl: linkedinUrl.trim() || undefined,
           twitterHandle: twitterHandle.trim() || undefined,

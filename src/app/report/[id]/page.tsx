@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import type { Report, ReportSection } from "@/types";
+import { getAccessKey } from "@/components/AuthGate";
 
 const TIME_RANGE_LABELS: Record<string, string> = {
   "3months": "3 months",
@@ -131,7 +132,9 @@ export default function ReportPage() {
   useEffect(() => {
     async function fetchReport() {
       try {
-        const res = await fetch(`/api/reports/${id}`);
+        const res = await fetch(`/api/reports/${id}`, {
+          headers: { "x-access-key": getAccessKey() || "" },
+        });
         if (res.status === 404) {
           setNotFound(true);
           setLoading(false);

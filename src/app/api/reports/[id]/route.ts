@@ -1,10 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getReport } from '@/lib/reports';
+import { validateAccessKey, unauthorizedResponse } from '@/lib/auth';
 
 export async function GET(
-  _request: NextRequest,
+  request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  if (!validateAccessKey(request)) return unauthorizedResponse();
+
   const { id } = await params;
   const report = await getReport(id);
 
