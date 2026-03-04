@@ -1,7 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import type { TimeRange } from "@/types";
 
 const TIME_RANGES: { value: TimeRange; label: string }[] = [
@@ -27,6 +28,16 @@ export default function Home() {
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [progressPhase, setProgressPhase] = useState(0);
+  const [pastReports, setPastReports] = useState<
+    { id: string; personName: string; createdAt: string }[]
+  >([]);
+
+  useEffect(() => {
+    fetch("/api/reports")
+      .then((res) => res.json())
+      .then(setPastReports)
+      .catch(() => {});
+  }, []);
 
   const hasInput = linkedinUrl.trim() || twitterHandle.trim();
 
@@ -244,6 +255,29 @@ export default function Home() {
         <p className="mt-10 text-center text-xs text-muted/50">
           At least one profile required. Both recommended for deeper analysis.
         </p>
+
+        {/* Past reports */}
+        {pastReports.length > 0 && (
+          <div className="mt-12 border-t border-border pt-8">
+            <h2 className="mb-4 font-mono text-xs uppercase tracking-wider text-muted">
+              Past Reports
+            </h2>
+            <div className="space-y-2">
+              {pastReports.map((report) => (
+                <Link
+                  key={report.id}
+                  href={`/report/${report.id}`}
+                  className="flex items-center justify-between rounded-md border border-border bg-surface px-3.5 py-2.5 text-sm transition-colors hover:border-accent/30 hover:bg-surface-2"
+                >
+                  <span className="text-foreground">{report.personName}</span>
+                  <span className="font-mono text-xs text-muted">
+                    {new Date(report.createdAt).toLocaleDateString()}
+                  </span>
+                </Link>
+              ))}
+            </div>
+          </div>
+        )}
       </main>
     </div>
   );
