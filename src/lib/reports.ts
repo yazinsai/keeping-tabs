@@ -46,3 +46,13 @@ export async function listReports(): Promise<{ id: string; personName: string; c
 
   return reports.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
 }
+
+export async function deleteReport(id: string): Promise<boolean> {
+  try {
+    const filePath = path.join(REPORTS_DIR, `${id}.json`);
+    await fs.unlink(filePath);
+    return true;
+  } catch {
+    return false;
+  }
+}

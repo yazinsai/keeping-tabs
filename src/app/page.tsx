@@ -270,16 +270,46 @@ export default function Home() {
             </h2>
             <div className="space-y-2">
               {pastReports.map((report) => (
-                <Link
+                <div
                   key={report.id}
-                  href={`/report/${report.id}`}
-                  className="flex items-center justify-between rounded-md border border-border bg-surface px-3.5 py-2.5 text-sm transition-colors hover:border-accent/30 hover:bg-surface-2"
+                  className="flex items-center gap-2 rounded-md border border-border bg-surface text-sm transition-colors hover:border-accent/30 hover:bg-surface-2"
                 >
-                  <span className="text-foreground">{report.personName}</span>
-                  <span className="font-mono text-xs text-muted">
-                    {new Date(report.createdAt).toLocaleDateString()}
-                  </span>
-                </Link>
+                  <Link
+                    href={`/report/${report.id}`}
+                    className="flex flex-1 items-center justify-between px-3.5 py-2.5"
+                  >
+                    <span className="text-foreground">{report.personName}</span>
+                    <span className="font-mono text-xs text-muted">
+                      {new Date(report.createdAt).toLocaleDateString()}
+                    </span>
+                  </Link>
+                  <button
+                    onClick={async () => {
+                      const res = await fetch(`/api/reports/${report.id}`, {
+                        method: "DELETE",
+                        headers: { "x-access-key": getAccessKey() || "" },
+                      });
+                      if (res.ok) {
+                        setPastReports((prev) =>
+                          prev.filter((r) => r.id !== report.id)
+                        );
+                      }
+                    }}
+                    className="shrink-0 px-2.5 py-2.5 text-muted hover:text-red-400 transition-colors"
+                    title="Delete report"
+                  >
+                    <svg
+                      width="14"
+                      height="14"
+                      viewBox="0 0 16 16"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="1.5"
+                    >
+                      <path d="M4 4l8 8M12 4L4 12" />
+                    </svg>
+                  </button>
+                </div>
               ))}
             </div>
           </div>
