@@ -92,16 +92,18 @@ export async function fetchLinkedInPosts(
 }
 
 export function linkedInPostsToUnified(posts: LinkedInPost[]): UnifiedPost[] {
-  return posts.map(post => ({
-    platform: 'linkedin' as const,
-    text: post.text,
-    date: post.posted,
-    url: post.post_url,
-    engagement: {
-      likes: post.num_reactions || 0,
-      comments: post.num_comments || 0,
-      shares: post.num_reposts || 0,
-    },
-    authorName: `${post.poster.first} ${post.poster.last}`,
-  }));
+  return posts
+    .filter(post => post.text && post.poster)
+    .map(post => ({
+      platform: 'linkedin' as const,
+      text: post.text,
+      date: post.posted,
+      url: post.post_url,
+      engagement: {
+        likes: post.num_reactions || 0,
+        comments: post.num_comments || 0,
+        shares: post.num_reposts || 0,
+      },
+      authorName: post.poster ? `${post.poster.first} ${post.poster.last}` : 'Unknown',
+    }));
 }

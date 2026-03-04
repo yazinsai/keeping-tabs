@@ -14,7 +14,7 @@ export interface LinkedInPost {
   text: string;
   posted: string;
   post_url: string;
-  poster: {
+  poster?: {
     first: string;
     last: string;
     linkedin_url: string;
